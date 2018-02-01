@@ -16,9 +16,7 @@ using matrix_chain_t = std::vector<std::pair<unsigned, unsigned> >;
 
 unsigned cost(const matrix_chain_t& chain, size_t i, size_t k, size_t j)
 {
-  const unsigned c = chain[i].first * chain[k].first * chain[j].second;
-  std::cout << "Cost of " << i << " " << k << " " << j << " is " << c << std::endl;
-  return c;
+  return chain[i].first * chain[k].first * chain[j].second;
 }
 
 template<typename T>
@@ -48,15 +46,9 @@ TEST(MatrixMultiplication, basic)
 
   const size_t N = chain.size();
 
-  // Initialize cost array
   array_2d_t<unsigned> m;
-  init(m, N, std::numeric_limits<unsigned>::max());
-  for(size_t i=0; i<N; ++i) 
-  {
-    m[i][i] = 0;
-  }
-
   array_2d_t<int> s;
+  init(m, N, 0u);
   init(s, N, -1);
 
   for(size_t d=1; d<N; ++d)
@@ -64,7 +56,7 @@ TEST(MatrixMultiplication, basic)
     for(size_t i=0; i<N-d; ++i)
     {
       size_t j=i+d;
-      std::cout << "Checking m[" << i << "][" << j << "]" << std::endl; 
+      m[i][j] = std::numeric_limits<unsigned>::max();
       for(size_t k=i+1; k<=j; ++k)
       { 
         unsigned c = m[i][k-1] + m[k][j] + cost(chain,i,k,j);
@@ -79,14 +71,18 @@ TEST(MatrixMultiplication, basic)
 
   std::cout << "Total cost: " << m[0][N-1] << std::endl;
 
+  // Print the cost matrix
   for(size_t j=0; j<N; ++j)
   {
-    for(size_t i=0; i<N; ++i)
+    for(size_t i=0; i<=j; ++i)
     {
       std::cout << m[i][j] << " ";
     } 
     std::cout << std::endl;
   }
+
+  // Print the solution
+  std::cout << "Solution: ";
   solution(std::cout, s, 0, N-1);
   std::cout << std::endl;
 }
