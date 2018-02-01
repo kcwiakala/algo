@@ -1,32 +1,12 @@
-# Prerequisites
-*.d
+.vscode
+CMakeFiles
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+CMakeCache.txt
+*.cmake
+Makefile
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
 *.a
-*.lib
+*.so
+algo
 
-# Executables
-*.exe
-*.out
-*.app
+core
