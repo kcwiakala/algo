@@ -77,7 +77,7 @@ TEST(MatrixMultiplication, basic)
     for(size_t i=0; i<=j; ++i)
     {
       std::cout << m[i][j] << " ";
-    } 
+    }
     std::cout << std::endl;
   }
 
