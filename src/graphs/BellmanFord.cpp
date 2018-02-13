@@ -46,6 +46,10 @@ struct Graph
 
     // Detect negative cycles
     for(int u=0;u<N;++u) {
+      if(distance[u] == MAX_INT) { 
+        // u not reachable from source
+        continue;
+      }
       for(const auto& edge: adj[u]) {
         int v = edge.target;
         if(distance[v] > distance[u] + edge.weight) {
@@ -82,6 +86,18 @@ TEST(BellmanFord, test1)
   EXPECT_EQ(distance[3], MAX_INT);
   EXPECT_EQ(distance[4], 5);
   EXPECT_EQ(distance[5], 7);
+}
+
+TEST(bellmanFord, negative_cycle)
+{
+  Graph g(3);
+  g.connect(0,1,-1);
+  g.connect(1,2,-3);
+  g.connect(2,0,2);
+
+  List distance = g.bellmanFord(0);
+  ASSERT_EQ(distance.size(), 3);
+  EXPECT_EQ(distance[0], MAX_INT);  
 }
 
 } // namespace algo
