@@ -1,6 +1,7 @@
 #include "GraphsCommon.hpp"
 
 namespace algo {
+namespace bf {
 
 struct Edge
 {
@@ -100,4 +101,5 @@ TEST(bellmanFord, negative_cycle)
   EXPECT_EQ(distance[0], MAX_INT);  
 }
 
+} // namespace bf
 } // namespace algo

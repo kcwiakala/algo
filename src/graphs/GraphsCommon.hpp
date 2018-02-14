@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <functional>
 #include <limits>
 #include <vector>
 
@@ -13,6 +14,8 @@ using List = std::vector<int>;
 using Flags = std::vector<bool>;
 
 constexpr int MAX_INT = std::numeric_limits<int>::max();
+
+using VerticeHandler = std::function<void(int)>;
 
 } // namespace algo
 

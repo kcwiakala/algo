@@ -3,7 +3,8 @@
 #include "GraphsCommon.hpp"
 
 namespace algo {
-
+namespace dijkstra {
+  
 struct Edge
 {
   Edge(int t, int w): target(t), weight(w) {}
@@ -111,4 +112,5 @@ TEST(Dijkstra, test1)
   EXPECT_EQ(distance[5], 7);
 }
 
+} // namespace dijkstra
 } // namespace algo
