@@ -34,8 +34,9 @@ void solution(std::ostream& strm, const array_2d_t<int>& s, size_t i, size_t j)
   else 
   {
     strm << "(";
-    solution(strm, s, i, s[i][j] - 1);
-    solution(strm, s, s[i][j], j);
+    size_t k = s[i][j];
+    solution(strm, s, i, k - 1);
+    solution(strm, s, k, j);
     strm << ")";
   }
 }
