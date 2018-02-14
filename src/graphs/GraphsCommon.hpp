@@ -2,6 +2,7 @@
 #define ALGO_GRAPHS_COMMON_HPP_
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include <algorithm>
 #include <functional>
