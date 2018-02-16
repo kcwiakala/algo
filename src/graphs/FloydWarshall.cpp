@@ -1,37 +1,39 @@
 #include <list>
 
+#include <Matrix.hpp>
+
 #include "GraphsCommon.hpp"
 
 namespace algo {
 namespace scc {
 
-template<typename T>
-class Matrix
-{
-public:
-  Matrix(size_t size, const T& init)
-  {
-    M.resize(size, std::vector<T>(size, init));
-  }
+// template<typename T>
+// class Matrix
+// {
+// public:
+//   Matrix(size_t size, const T& init)
+//   {
+//     M.resize(size, std::vector<T>(size, init));
+//   }
 
-  T& operator()(int i, int j)
-  {
-    return M[i][j];
-  }
+//   T& operator()(int i, int j)
+//   {
+//     return M[i][j];
+//   }
 
-  const T& operator()(int i, int j) const
-  {
-    return M[i][j];
-  }
+//   const T& operator()(int i, int j) const
+//   {
+//     return M[i][j];
+//   }
 
-  size_t size() const
-  {
-    return M.size();
-  }
+//   size_t size() const
+//   {
+//     return M.size();
+//   }
 
-private:
-  std::vector<std::vector<T>> M;
-};
+// private:
+//   std::vector<std::vector<T>> M;
+// };
 
 struct Edge
 {
@@ -52,8 +54,8 @@ struct Graph
 
   auto floydWarshall()
   {
-    Matrix<int> D(size, MAX_INT);
-    Matrix<int> P(size, -1);
+    Matrix<int> D(size, size, MAX_INT);
+    Matrix<int> P(size, size, -1);
 
     for(int i=0; i<size; ++i) {
       D(i,i) = 0;
@@ -114,10 +116,10 @@ TEST(FloydWarshall, test1)
   const auto& dist = result.first;
   const auto& parent = result.second;
 
-  for(int i=0; i<dist.size(); ++i) {
+  for(int i=0; i<dist.width(); ++i) {
     EXPECT_EQ(dist(i,i), 0);
   }
-  for(int i=0; i<parent.size(); ++i) {
+  for(int i=0; i<parent.width(); ++i) {
     EXPECT_EQ(parent(i,i), -1);
   }
 

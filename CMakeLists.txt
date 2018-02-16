@@ -7,5 +7,5 @@ set(CMAKE_CXX_STANDARD 17)
 file(GLOB_RECURSE sources "src/*.cpp")
 
 add_executable(algo ${sources})
-target_include_directories(algo PUBLIC "test" ".")
+target_include_directories(algo PUBLIC "include")
 target_link_libraries(algo PUBLIC gtest gmock pthread)
