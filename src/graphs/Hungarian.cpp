@@ -60,7 +60,7 @@ struct BipartiteGraph
           }
         }
         a[*rit] = j;
-        std::cout << "Assigning " << j << " for " << *rit << std::endl;
+        // std::cout << "Assigning " << j << " for " << *rit << std::endl;
         std::sort(rit+1, rows.end(), comp);
       }
     }
@@ -140,7 +140,7 @@ struct BipartiteGraph
         H(i,j) -= minVal;
       }
     }
-    std::cout << H << std::endl;
+    // std::cout << H << std::endl;
 
     // Step 2
     for(int j=0; j<H.width(); ++j) {
@@ -150,7 +150,7 @@ struct BipartiteGraph
         H(i,j) -= minVal;
       }
     }
-    std::cout << H << std::endl;
+    // std::cout << H << std::endl;
 
     // Step 3
     int steps = H.width();
@@ -160,7 +160,7 @@ struct BipartiteGraph
         break;
       }
       crossOut(H, assignment);
-      std::cout << H << std::endl;
+      // std::cout << H << std::endl;
     }
 
     return assignment;
