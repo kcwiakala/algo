@@ -1,78 +1,70 @@
 #include "GraphsCommon.hpp"
 
+#include <Graph.hpp>
+
 namespace algo {
 namespace scc {
 
-struct Graph 
+struct Graph: public GenericGraph<> 
 {
-  Graph(int s): size(s), adjacency(size) {}
+  Graph(size_t s): GenericGraph(s) {}
 
-  void connect(int u, int v) 
+  VerticeList topologicalSort()
   {
-    adjacency[u].push_back(v);
-  }
-
-  void dfs(int s, Flags& discovered, const VerticeHandler& processLate)
-  {
-    discovered[s] = true;
-    for(int v: adjacency[s]) {
-      if(!discovered[v]) {
-        dfs(v, discovered, processLate);
-      } 
-    }
-    processLate(s);
-  }
-
-  List topoSort() 
-  {
-    Flags discovered(size, false);
-    List sorted;
-    sorted.reserve(size);
-
-    auto processLate = [&sorted](int u) {
-      sorted.push_back(u);
+    struct State: public TraversalState
+    {
+      State(size_t s): TraversalState(s)
+      {
+        sorted.reserve(s);
+      }
+      void processLate(int u) override
+      {
+        sorted.push_back(u);
+      }
+      VerticeList sorted;
     };
 
-    for(int s=0; s<size; ++s) {
-      if(!discovered[s]) {
-        dfs(s, discovered, processLate);
+    State state(size);
+    for(int u=0; u<size; ++u) {
+      if(!state.processed[u]) {
+        dfsImpl(u, state);
       }
     }
-    std::reverse(sorted.begin(), sorted.end());
-
-    return sorted;
+    std::reverse(state.sorted.begin(), state.sorted.end());
+    return state.sorted;
   }
 
   auto scc()
   {
-    List sorted = topoSort();
+    VerticeList sorted = topologicalSort();
 
     // Transpose graph
     Graph gt(size);
     for(int u=0; u<size; ++u) {
-      for(int v: adjacency[u]) {
-        gt.connect(v,u);
+      for(const auto& e: adjacency[u]) {
+        gt.connect(e.to,u);
       }
     }
 
-    std::vector<List> components;
-    auto processLate = [&components](int u) {
-      components.back().push_back(u);
+    struct State: public TraversalState
+    {
+      State(size_t s): TraversalState(s) {}
+      void processLate(int u) override
+      {
+        components.back().push_back(u);
+      }
+      std::vector<VerticeList> components;
     };
 
-    Flags discovered(size, false);
+    State state(size);
     for(int s: sorted) {
-      if(!discovered[s]) {
-        components.emplace_back();
-        gt.dfs(s, discovered, processLate);
+      if(!state.processed[s]) {
+        state.components.emplace_back();
+        gt.dfsImpl(s, state);
       }
     }
-
-    return components;
+    return state.components;
   }
-
-  const int size;
-  std::vector<List> adjacency;
 };
 
 TEST(StronglyConnectedComponents, test1) 
