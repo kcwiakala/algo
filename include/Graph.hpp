@@ -35,11 +35,11 @@ public:
     }
   }
 
-  void connect(int u, const EDGE& e)
+  void connect(int u, const EdgeType& e)
   {
     adjacency[u].push_back(e);
     if(!DIRECTED) {
-      EDGE re(e);
+      EdgeType re(e);
       re.to = u;
       adjacency[e.to].emplace_back(std::move(re)); 
     }
@@ -86,7 +86,7 @@ public:
     s.discovered[u] = true;
     s.processEarly(u);
 
-    for(const EDGE& e: adjacency[u]) {
+    for(const EdgeType& e: adjacency[u]) {
       const int v = e.to;
       if(!s.discovered[v] && s.validEdge(e)) {
         s.parent[v] = u;
@@ -112,7 +112,7 @@ public:
       queue.pop();
       s.processEarly(u);
       s.processed[u] = true;
-      for(const EDGE& e: adjacency[u]) {
+      for(const EdgeType& e: adjacency[u]) {
         const int v = e.to;
         if(!s.processed[v] || DIRECTED) {
           s.processEdge(u,e);
@@ -145,7 +145,7 @@ public:
   }
 
 protected:
-  using EdgeList=std::vector<EDGE>;
+  using EdgeList=std::vector<EdgeType>;
 
   const size_t size;
   std::vector<EdgeList> adjacency;
