@@ -9,14 +9,22 @@ struct GenericEdge
   int to;
 };
 
+struct WeightedEdge
+{
+  int to;
+  int weight;
+};
+
 template<typename EDGE=GenericEdge, bool DIRECTED=true>
 class GenericGraph
 {
 public:
+  using EdgeType=EDGE;
   using VerticeList=std::vector<int>;
   using Flags=std::vector<bool>;
 
   GenericGraph(size_t s): size(s), adjacency(size) {}
+  GenericGraph(const GenericGraph& rhs) = default;
 
   template<typename... Args>
   void connect(int u, int v, const Args&... args)
@@ -27,7 +35,27 @@ public:
     }
   }
 
-protected:
+  void connect(int u, const EDGE& e)
+  {
+    adjacency[u].push_back(e);
+    if(!DIRECTED) {
+      EDGE re(e);
+      re.to = u;
+      adjacency[e.to].emplace_back(std::move(re)); 
+    }
+  }
+
+  void transpose()
+  {
+    std::vector<EdgeList> aux(size);
+    aux.swap(adjacency);
+    for(int u=0; u<size; ++u) {
+      for(const auto& e: aux[u]) {
+        connect(e.to,u);
+      }
+    }
+  }
+
   struct TraversalState
   {
     TraversalState(size_t size): 
@@ -36,13 +64,21 @@ protected:
       parent(size, -1)
     {}
 
+    virtual void reset()
+    {
+      discovered.assign(discovered.size(), false);
+      processed.assign(processed.size(), false);
+      parent.assign(parent.size(), -1);
+    }
+
     Flags discovered;
     Flags processed;
     VerticeList parent;
 
     virtual void processEarly(int u) {}
     virtual void processLate(int u) {}
-    virtual void processEdge(int v, const EDGE& e) {}
+    virtual void processEdge(int v, const EdgeType& e) {}
+    virtual bool validEdge(const EdgeType& e) { return true; }
   };
 
   void dfsImpl(int u, TraversalState& s)
@@ -52,7 +88,7 @@ protected:
 
     for(const EDGE& e: adjacency[u]) {
       const int v = e.to;
-      if(!s.discovered[v]) {
+      if(!s.discovered[v] && s.validEdge(e)) {
         s.parent[v] = u;
         s.processEdge(u,e);
         dfsImpl(v, s);
@@ -79,9 +115,9 @@ protected:
       for(const EDGE& e: adjacency[u]) {
         const int v = e.to;
         if(!s.processed[v] || DIRECTED) {
-          s.processEdge(u,v);
+          s.processEdge(u,e);
         }
-        if(!s.discovered[v]) {
+        if(!s.discovered[v] && s.validEdge(e)) {
           queue.push(v);
           s.discovered[v] = true;
           s.parent[v] = u;
@@ -89,6 +125,23 @@ protected:
       }
       s.processLate(u);
     }
+  }
+
+  VerticeList buildPath(int u, int v, const VerticeList& parent) const
+  {
+    VerticeList result;
+    result.push_back(v);
+
+    int x = v;
+    while(x != u) {
+      if(parent[x] < 0) {
+        return VerticeList();
+      }
+      x = parent[x];
+      result.push_back(x);
+    } 
+    std::reverse(result.begin(), result.end());
+    return result;
   }
 
 protected:

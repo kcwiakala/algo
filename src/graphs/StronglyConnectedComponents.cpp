@@ -36,15 +36,8 @@ struct Graph: public GenericGraph<>
 
   auto scc()
   {
-    VerticeList sorted = topologicalSort();
-
-    // Transpose graph
-    Graph gt(size);
-    for(int u=0; u<size; ++u) {
-      for(const auto& e: adjacency[u]) {
-        gt.connect(e.to,u);
-      }
-    }
+    Graph gt(*this);
+    gt.transpose();
 
     struct State: public TraversalState
     {
@@ -57,7 +50,7 @@ struct Graph: public GenericGraph<>
     };
 
     State state(size);
-    for(int s: sorted) {
+    for(int s: topologicalSort()) {
       if(!state.processed[s]) {
         state.components.emplace_back();
         gt.dfsImpl(s, state);

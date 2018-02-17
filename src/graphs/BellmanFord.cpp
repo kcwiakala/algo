@@ -1,42 +1,36 @@
 #include "GraphsCommon.hpp"
 
+#include <Graph.hpp>
+
 namespace algo {
 namespace bf {
 
 struct Edge
 {
-  Edge(int t, int w): target(t), weight(w) {}
+  Edge(int t, int w): to(t), weight(w) {}
 
-  int target;
+  int to;
   int weight;
 };
 
-using EdgeList=std::vector<Edge>;
-
-struct Graph
+struct Graph: public GenericGraph<Edge>
 {
-  Graph(int size): N(size), adj(size) {}
+  Graph(size_t s): GenericGraph(s) {}
 
-  void connect(int u, int v, int w)
+  VerticeList bellmanFord(int source)
   {
-    adj[u].emplace_back(v,w);
-  }
-
-  List bellmanFord(int source)
-  {
-    List distance(N, MAX_INT);  // Algorithm result, distances from source to vertices
+    VerticeList distance(size, MAX_INT);
     distance[source] = 0;
 
-    // Loop N-1 times
-    for(int i=0; i<N-1; ++i) {
-      for(int u=0;u<N;++u) {
+    for(int i=0; i<size-1; ++i) {
+      for(int u=0;u<size;++u) {
         // If distance from u is INF there is no point checking its adjacency yet
         if(distance[u] == MAX_INT) {
           continue;
         }
         // Over each edge of the graph
-        for(const auto& edge: adj[u]) {
-          int v = edge.target;
+        for(const auto& edge: adjacency[u]) {
+          int v = edge.to;
           int aux = distance[u] + edge.weight;
           if(aux < distance[v]) {
             distance[v] = aux;
@@ -46,26 +40,22 @@ struct Graph
     }
 
     // Detect negative cycles
-    for(int u=0;u<N;++u) {
+    for(int u=0;u<size;++u) {
       if(distance[u] == MAX_INT) { 
         // u not reachable from source
         continue;
       }
-      for(const auto& edge: adj[u]) {
-        int v = edge.target;
+      for(const auto& edge: adjacency[u]) {
+        int v = edge.to;
         if(distance[v] > distance[u] + edge.weight) {
           distance[source] = MAX_INT;
           return distance;
         }
       }
     }
-    
 
     return distance;
   }
-
-  const int N;
-  std::vector<EdgeList> adj;
 };
 
 TEST(BellmanFord, test1) 

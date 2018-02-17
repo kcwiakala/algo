@@ -1,82 +1,46 @@
 #include <queue> 
 
 #include "GraphsCommon.hpp"
+#include <Graph.hpp>
 
 namespace algo {
 namespace edmonds {
 
-struct Edge
+struct ResidualEdge
 {
-  Edge(int t, int c): to(t), capacity(c) {}
+  ResidualEdge(int t, int r): to(t), residual(r) {}
 
   int to;
-  int capacity;
-
+  int residual;
   int flow = 0;
-  int residual = 0;
 };
 
-using EdgeList = std::vector<Edge>;
-
-struct ResidualFlowGraph
+struct CapacityEdge
 {
-  ResidualFlowGraph(const std::vector<EdgeList>& adj): size(adj.size()), adjacency(adj)
+  int to;
+  int capacity;
+};
+
+struct ResidualFlowGraph: public GenericGraph<ResidualEdge>
+{
+  template<typename EL>
+  ResidualFlowGraph(const EL& adj): GenericGraph(adj.size())
   {
     for(int u=0; u<size; ++u) {
-      for(Edge& e: adjacency[u]) {
-        e.residual = e.capacity;
-        adjacency[e.to].push_back({u, 0});
+      for(const auto& e: adj[u]) {
+        connect(u, e.to, e.capacity);
+        connect(e.to, u, 0);
       }
-    }
+    }    
   }
 
-  List bfs(int source) 
-  {
-    List parents(size, -1);
-    Flags discovered(size, false);
-    std::queue<int> queue;
-
-    queue.push(source);
-    while(!queue.empty()) {
-      int u = queue.front();
-      queue.pop();
-      discovered[u] = true;
-      for(const Edge& e: adjacency[u]) {
-        int v = e.to;
-        if(!discovered[v] && (e.residual > 0)) {
-          parents[v] = u;
-          discovered[v] = true;
-          queue.push(v);
-        }
-      }
-    }
-    return parents;
-  }
-
-  List path(int u, int v, const List& parents)
-  {
-    List result;
-    result.push_back(v);
-
-    int x = v;
-    while(x != u) {
-      if(parents[x] < 0) {
-        return List();
-      }
-      x = parents[x];
-      result.push_back(x);
-    } 
-    std::reverse(result.begin(), result.end());
-    return result;
-  }
-
-  int volume(const List& p)
+  int volume(const VerticeList& path) const
   {
     int result = std::numeric_limits<int>::max();
-    for(int i=0; i<p.size()-1;++i) {
-      int u = p[i];
-      int v = p[i+1];
-      for(const Edge& e: adjacency[u]) {
+    for(int i=0; i<path.size()-1;++i) {
+      int u = path[i];
+      int v = path[i+1];
+      for(const ResidualEdge& e: adjacency[u]) {
         if(e.to == v) {
           result = std::min(result, e.residual);
           break;
@@ -86,19 +50,19 @@ struct ResidualFlowGraph
     return result;
   }
 
-  void augment(const List& p, int vol)
+  void augment(const VerticeList& path, int vol)
   {
-    for(int i=0; i<p.size()-1;++i) {
-      int u = p[i];
-      int v = p[i+1];
-      for(Edge& e: adjacency[u]) {
+    for(int i=0; i<path.size()-1;++i) {
+      int u = path[i];
+      int v = path[i+1];
+      for(ResidualEdge& e: adjacency[u]) {
         if(e.to == v) {
           e.flow += vol;
           e.residual -= vol;
           break;
         }
       }
-      for(Edge& e: adjacency[v]) {
+      for(ResidualEdge& e: adjacency[v]) {
         if(e.to == u) {
           e.residual += vol;
           break;
@@ -107,47 +71,48 @@ struct ResidualFlowGraph
     }
   }
 
-  int flow(int source) 
+  int flow(int source) const
   {
     int f = 0;
-    for(const Edge& e: adjacency[source]) {
+    for(const ResidualEdge& e: adjacency[source]) {
       f += e.flow;
     }
     return f;
   }
-
-  const size_t size;
-  std::vector<EdgeList> adjacency;
 };
 
-struct Graph
+struct Graph: public GenericGraph<CapacityEdge>
 {
-  Graph(size_t s): size(s), adjacency(size) {}
-
-  void connect(int u, int v, int c)
-  {
-    adjacency[u].emplace_back(v,c);
-  }
+  Graph(size_t s): GenericGraph(s) {}
 
   int maxFlow(int source, int sink)
   {
     ResidualFlowGraph rg(adjacency);
 
-    List parents = rg.bfs(source);
-    List augmentingPath = rg.path(source, sink, parents);
+    struct State: public ResidualFlowGraph::TraversalState
+    {
+      State(size_t s): ResidualFlowGraph::TraversalState(s) {}
+
+      bool validEdge(const ResidualEdge& e)
+      {
+        return e.residual > 0;
+      }
+    };
+
+    State state(size);
+    rg.bfsImpl(source, state);
+    VerticeList augmentingPath = rg.buildPath(source, sink, state.parent);
 
     while(!augmentingPath.empty()) {
       int augmentingVolume = rg.volume(augmentingPath);
       rg.augment(augmentingPath, augmentingVolume);
-      parents = rg.bfs(source);
-      augmentingPath = rg.path(source, sink, parents);
+      state.reset();
+      rg.bfsImpl(source, state);
+      augmentingPath = rg.buildPath(source, sink, state.parent);
     }
 
     return rg.flow(source);
   }
-
-  const size_t size;
-  std::vector<EdgeList> adjacency;
 };
 
 TEST(EdmondsKarp, test1)
