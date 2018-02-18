@@ -1,19 +1,16 @@
-#include "GraphsCommon.hpp"
+#include <limits>
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include <Graph.hpp>
 
 namespace algo {
 namespace bf {
 
-struct Edge
-{
-  Edge(int t, int w): to(t), weight(w) {}
+constexpr int MAX_INT = std::numeric_limits<int>::max();
 
-  int to;
-  int weight;
-};
-
-struct Graph: public GenericGraph<Edge>
+struct Graph: public GenericGraph<WeightedEdge>
 {
   Graph(size_t s): GenericGraph(s) {}
 
@@ -69,7 +66,7 @@ TEST(BellmanFord, test1)
   g.connect(5,2,3);
   g.connect(5,4,1);
 
-  List distance = g.bellmanFord(0);
+  auto distance = g.bellmanFord(0);
   ASSERT_EQ(distance.size(), 6);
   EXPECT_EQ(distance[0], 0);
   EXPECT_EQ(distance[1], 3);
@@ -86,7 +83,7 @@ TEST(bellmanFord, negative_cycle)
   g.connect(1,2,-3);
   g.connect(2,0,2);
 
-  List distance = g.bellmanFord(0);
+  auto distance = g.bellmanFord(0);
   ASSERT_EQ(distance.size(), 3);
   EXPECT_EQ(distance[0], MAX_INT);  
 }

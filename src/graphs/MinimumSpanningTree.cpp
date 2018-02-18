@@ -1,40 +1,27 @@
 #include <queue>
 
-#include "GraphsCommon.hpp"
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
+#include <Graph.hpp>
 
 namespace algo {
 namespace mst {
 
-struct Edge
+struct Graph: public GenericGraph<WeightedEdge, false>
 {
-  Edge(int t, int w): target(t), weight(w) {}
-
-  int target;
-  int weight;
-};
-
-using EdgeList=std::vector<Edge>;
-
-struct Graph
-{
-  Graph(int s): size(s), adjacency(size) {}
-
-  void connect(int u, int v, int w)
-  {
-    adjacency[u].emplace_back(v,w);
-    adjacency[v].emplace_back(u,w);
-  }
+  Graph(size_t s): GenericGraph(s) {}
 
   int prim()
   {
-    auto comp = [](const Edge* e1, const Edge* e2) {
+    auto comp = [](const EdgeType* e1, const EdgeType* e2) {
       return e1->weight > e2->weight;
     };
-    std::priority_queue<const Edge*, std::vector<const Edge*>, decltype(comp)> queue(comp);
+    std::priority_queue<const EdgeType*, std::vector<const EdgeType*>, decltype(comp)> queue(comp);
 
     // Pick arbitrary vertice
     int s=0;
-    for(const Edge& e: adjacency[s]) {
+    for(const EdgeType& e: adjacency[s]) {
       queue.push(&e);
     }
 
@@ -43,14 +30,14 @@ struct Graph
     int mstSize = 1;
     int mstWeight = 0;
     while(mstSize < size && !queue.empty()) {
-      const Edge* minEdge = queue.top();
+      const EdgeType* minEdge = queue.top();
       queue.pop();
-      int v = minEdge->target;
+      int v = minEdge->to;
       if(!inMst[v]) {
         inMst[v] = true;
         mstWeight += minEdge->weight;
         ++mstSize;
-        for(const Edge& e: adjacency[v]) {
+        for(const EdgeType& e: adjacency[v]) {
           queue.push(&e);
         }
       }
@@ -71,13 +58,13 @@ struct Graph
 
     std::vector<Link> links;
     for(int u=0; u<size; ++u) {
-      for(const Edge& e: adjacency[u]) {
-        links.push_back({u, e.target, e.weight});
+      for(const EdgeType& e: adjacency[u]) {
+        links.push_back({u, e.to, e.weight});
       }
     }
     std::sort(links.begin(), links.end());
 
-    List component(size);
+    VerticeList component(size);
     for(int i=0; i<size; ++i) {
       component[i] = i;
     }
@@ -96,9 +83,6 @@ struct Graph
     }
     return mstWeight;
   }
-
-  const int size;
-  std::vector<EdgeList> adjacency;
 };
 
 TEST(MinimumSpanningTree, Prim1) 

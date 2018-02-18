@@ -1,34 +1,22 @@
-#include <queue>
+#include <limits>
 
-#include "GraphsCommon.hpp"
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
+#include <Graph.hpp>
 
 namespace algo {
 namespace dijkstra {
   
-struct Edge
+struct Graph: GenericGraph<WeightedEdge>
 {
-  Edge(int t, int w): target(t), weight(w) {}
+  Graph(size_t s): GenericGraph(s) {}
 
-  int target;
-  int weight;
-};
-
-using EdgeList=std::vector<Edge>;
-
-struct Graph
-{
-  Graph(int size): N(size), adj(size) {}
-
-  void connect(int u, int v, int w)
+  VerticeList dijkstra(int source)
   {
-    adj[u].emplace_back(v,w);
-  }
-
-  List dijkstra(int source)
-  {
-    Flags known(N, false);      // Vertices already taken by greedy approach
-    Flags onHeap(N, false);     // Helper flag indicating is vertice is already on heap
-    List distance(N, MAX_INT);  // Algorithm result, distances from source to vertices
+    Flags known(size, false);             // Vertices already taken by greedy approach
+    Flags onHeap(size, false);            // Helper flag indicating is vertice is already on heap
+    VerticeList distance(size, std::numeric_limits<int>::max());  // Algorithm result, distances from source to vertices
 
     distance[source] = 0; // Distance from source to source
 
@@ -56,12 +44,12 @@ struct Graph
       bool rebuildHeap = false;
 
       // Loop over adjacency list
-      for(const auto& edge: adj[u]) {
-        int v = edge.target;
+      for(const auto& edge: adjacency[u]) {
+        const int v = edge.to;
         // If the vertice was not yet visited
         if(!known[v]) {
           // New potential distance to v
-          int aux = distance[u] + edge.weight;
+          const int aux = distance[u] + edge.weight;
           if(aux < distance[v]) { 
             // Shorter path found
             distance[v] = aux;
@@ -82,13 +70,8 @@ struct Graph
         std::make_heap(heap.begin(), heap.end(), comp);
       }
     }
-
-
     return distance;
   }
-
-  const int N;
-  std::vector<EdgeList> adj;
 };
 
 TEST(Dijkstra, test1) 
@@ -102,12 +85,12 @@ TEST(Dijkstra, test1)
   g.connect(5,2,3);
   g.connect(5,4,1);
 
-  List distance = g.dijkstra(0);
+  auto distance = g.dijkstra(0);
   ASSERT_EQ(distance.size(), 6);
   EXPECT_EQ(distance[0], 0);
   EXPECT_EQ(distance[1], 3);
   EXPECT_EQ(distance[2], 7);
-  EXPECT_EQ(distance[3], MAX_INT);
+  EXPECT_EQ(distance[3], std::numeric_limits<int>::max());
   EXPECT_EQ(distance[4], 5);
   EXPECT_EQ(distance[5], 7);
 }

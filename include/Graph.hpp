@@ -1,6 +1,5 @@
-#include <functional>
+#include <algorithm>
 #include <queue>
-#include <type_traits>
 #include <vector>
 
 namespace algo {

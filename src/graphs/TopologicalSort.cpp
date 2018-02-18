@@ -1,6 +1,7 @@
-#include <Graph.hpp>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
-#include "GraphsCommon.hpp"
+#include <Graph.hpp>
 
 namespace algo {
 namespace topo {
@@ -46,7 +47,8 @@ TEST(TolopologicalSort, test1)
   g.connect(3,2);
   g.connect(3,4);
   g.connect(4,1);
-  List sorted = g.topologicalSort();
+  
+  auto sorted = g.topologicalSort();
   ASSERT_THAT(sorted.size(), testing::Eq(5));
   ASSERT_THAT(sorted, testing::ElementsAre(0,3,4,2,1));
 }

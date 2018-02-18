@@ -1,7 +1,8 @@
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
 #include <Graph.hpp>
 #include <Matrix.hpp>
-
-#include "GraphsCommon.hpp"
 
 namespace algo {
 namespace hungarian {
@@ -70,6 +71,8 @@ struct ResidualFlowGraph: public GenericGraph<ResidualEdge>
 
 struct BipartiteGraph
 {
+  using Flags=std::vector<bool>;
+
   BipartiteGraph(size_t l, size_t r): _M(l,r,-1) 
   {
   }

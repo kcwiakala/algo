@@ -1,56 +1,20 @@
 #include <list>
+#include <limits>
 
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
+#include <Graph.hpp>
 #include <Matrix.hpp>
 
-#include "GraphsCommon.hpp"
-
 namespace algo {
-namespace scc {
+namespace fw {
 
-// template<typename T>
-// class Matrix
-// {
-// public:
-//   Matrix(size_t size, const T& init)
-//   {
-//     M.resize(size, std::vector<T>(size, init));
-//   }
+constexpr int MAX_INT = std::numeric_limits<int>::max();  
 
-//   T& operator()(int i, int j)
-//   {
-//     return M[i][j];
-//   }
-
-//   const T& operator()(int i, int j) const
-//   {
-//     return M[i][j];
-//   }
-
-//   size_t size() const
-//   {
-//     return M.size();
-//   }
-
-// private:
-//   std::vector<std::vector<T>> M;
-// };
-
-struct Edge
+struct Graph: public GenericGraph<WeightedEdge>
 {
-  int target;
-  int weight;
-};
-
-using EdgeList=std::vector<Edge>;
-
-struct Graph 
-{
-  Graph(int s): size(s), adjacency(size) {}
-
-  void connect(int u, int v, int w) 
-  {
-    adjacency[u].push_back({v,w});
-  }
+  Graph(size_t s): GenericGraph(s) {}
 
   auto floydWarshall()
   {
@@ -59,9 +23,9 @@ struct Graph
 
     for(int i=0; i<size; ++i) {
       D(i,i) = 0;
-      for(const Edge& e: adjacency[i]) {
-        D(i,e.target) = e.weight;
-        P(i,e.target) = i;
+      for(const EdgeType& e: adjacency[i]) {
+        D(i,e.to) = e.weight;
+        P(i,e.to) = i;
       }
     }
 
@@ -81,9 +45,6 @@ struct Graph
 
     return std::make_pair(D,P);
   }
-
-  const int size;
-  std::vector<EdgeList> adjacency;
 };
 
 auto path(int i, int j, const Matrix<int>& parent) 
@@ -130,5 +91,5 @@ TEST(FloydWarshall, test1)
   EXPECT_THAT(p, testing::ElementsAre(4,3,2,1));
 }
 
-} // namespace scc
+} // namespace fw
 } // namespace algo

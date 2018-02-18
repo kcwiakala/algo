@@ -1,6 +1,8 @@
 #include <queue> 
 
-#include "GraphsCommon.hpp"
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
 #include <Graph.hpp>
 
 namespace algo {
