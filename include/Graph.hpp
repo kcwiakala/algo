@@ -1,5 +1,6 @@
 #include <functional>
 #include <queue>
+#include <type_traits>
 #include <vector>
 
 namespace algo {
@@ -27,31 +28,23 @@ public:
   GenericGraph(const GenericGraph& rhs) = default;
 
   template<typename... Args>
-  void connect(int u, int v, const Args&... args)
+  void connect(int u, int v, Args&&... args)
   {
-    adjacency[u].push_back({v, args...});
+    adjacency[u].push_back({v, std::forward<Args>(args)...});
     if(!DIRECTED) {
-      adjacency[v].push_back({u, args...});
-    }
-  }
-
-  void connect(int u, const EdgeType& e)
-  {
-    adjacency[u].push_back(e);
-    if(!DIRECTED) {
-      EdgeType re(e);
-      re.to = u;
-      adjacency[e.to].emplace_back(std::move(re)); 
+      adjacency[v].push_back({u, std::forward<Args>(args)...});
     }
   }
 
   void transpose()
   {
-    std::vector<EdgeList> aux(size);
-    aux.swap(adjacency);
-    for(int u=0; u<size; ++u) {
-      for(const auto& e: aux[u]) {
-        connect(e.to,u);
+    if(DIRECTED) {
+      std::vector<EdgeList> aux(size);
+      aux.swap(adjacency);
+      for(int u=0; u<size; ++u) {
+        for(const auto& e: aux[u]) {
+          connect(e.to,u);
+        }
       }
     }
   }
