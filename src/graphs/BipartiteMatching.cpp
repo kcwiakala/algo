@@ -50,19 +50,11 @@ struct ResidualFlowGraph: public GenericGraph<ResidualEdge>
       for(ResidualEdge& e: adjacency[v]) {
         if(e.to == u) {
           e.residual += vol;
+          e.flow -= vol;
           break;
         }
       }
     }
-  }
-
-  int flow(int source) const
-  {
-    int f = 0;
-    for(const ResidualEdge& e: adjacency[source]) {
-      f += e.flow;
-    }
-    return f;
   }
 
   int flow(int u, int v) const

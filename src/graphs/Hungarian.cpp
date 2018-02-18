@@ -1,9 +1,72 @@
+#include <Graph.hpp>
 #include <Matrix.hpp>
 
 #include "GraphsCommon.hpp"
 
 namespace algo {
 namespace hungarian {
+
+struct ResidualEdge
+{
+  ResidualEdge(int t, int r): to(t), residual(r) {}
+
+  int to;
+  int residual;
+  int flow = 0;
+};
+
+struct ResidualFlowGraph: public GenericGraph<ResidualEdge>
+{
+  ResidualFlowGraph(size_t s): GenericGraph(s) {}
+
+  int volume(const VerticeList& path) const
+  {
+    int result = std::numeric_limits<int>::max();
+    for(int i=0; i<path.size()-1;++i) {
+      int u = path[i];
+      int v = path[i+1];
+      for(const ResidualEdge& e: adjacency[u]) {
+        if(e.to == v) {
+          result = std::min(result, e.residual);
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
+  void augment(const VerticeList& path, int vol)
+  {
+    for(int i=0; i<path.size()-1;++i) {
+      int u = path[i];
+      int v = path[i+1];
+      for(ResidualEdge& e: adjacency[u]) {
+        if(e.to == v) {
+          e.flow += vol;
+          e.residual -= vol;
+          break;
+        }
+      }
+      for(ResidualEdge& e: adjacency[v]) {
+        if(e.to == u) {
+          e.residual += vol;
+          e.flow -= vol;
+          break;
+        }
+      }
+    }
+  }
+
+  int flow(int u, int v) const
+  {
+    for(const ResidualEdge& e: adjacency[u]) {
+      if(e.to == v) {
+        return e.flow;
+      }
+    }
+    return -1;
+  }
+};  
 
 struct BipartiteGraph
 {
@@ -24,44 +87,56 @@ struct BipartiteGraph
   {
     const size_t H = M.height();
     const size_t W = M.width();
+    const size_t rgSize = H + W + 2;
 
-    a.assign(H,-1);
-    std::vector<int> zerosPerRow(H, 0);
-    std::vector<int> rows(H, 0);
-
-    // Count how many zeros in row;
+    // Create residual flow graph
+    ResidualFlowGraph rg(rgSize);
+    int source = rgSize-2;
+    int sink = rgSize-1;
     for(int i=0; i<H; ++i) {
-      rows[i] = i;
-      const auto& row = M.row(i);
-      zerosPerRow[i] = std::count(row.cbegin(), row.cend(), 0);
+      for(int j=0;j<W;++j) {
+        if(M(i,j) == 0) {
+          rg.connect(i, j+H, 1);
+          rg.connect(j+H, i, 0);
+        }  
+      }
+      rg.connect(source, i, 1);
+    }
+    for(int j=0;j<W;++j) {
+      rg.connect(j+H, sink, 1);
     }
 
-    // Sort 
-    auto comp = [&zerosPerRow](int r1, int r2) {
-      return zerosPerRow[r1] < zerosPerRow[r2];
+    struct State: public ResidualFlowGraph::TraversalState
+    {
+      State(size_t s): ResidualFlowGraph::TraversalState(s) {}
+
+      bool validEdge(const ResidualEdge& e)
+      {
+        return e.residual > 0;
+      }
     };
-    std::sort(rows.begin(), rows.end(), comp);
 
-    Flags usedColumn(W, false);
+    State state(rgSize);
+    rg.bfsImpl(source, state);
+    auto augmentingPath = rg.buildPath(source, sink, state.parent);
+    // for(int i: augmentingPath) { std::cout << i << "->"; } std::cout << std::endl;
 
-    for(auto rit = rows.begin(); rit != rows.end(); ++rit) {
-      if(zerosPerRow[*rit] > 0) {
-        const auto& row = M.row(*rit);
-        int j=0;
-        for(; j<W; ++j) {
-          if(!usedColumn[j] && row[j] == 0) {
-            usedColumn[j] = true;
-            for(int i=0; i<H; ++i) {
-              if(M(i,j) == 0) {
-                --zerosPerRow[i];
-              }
-            }
-            break; 
-          }
+    while(!augmentingPath.empty()) {
+      int augmentingVolume = rg.volume(augmentingPath);
+      rg.augment(augmentingPath, augmentingVolume);
+      state.reset();
+      rg.bfsImpl(source, state);
+      augmentingPath = rg.buildPath(source, sink, state.parent);
+      // for(int i: augmentingPath) { std::cout << i << "->"; } std::cout << std::endl;
+    }
+
+    a.assign(H, -1);
+    for(int i=0; i<H; ++i) {
+      for(int j=0; j<W; ++j) {
+        if(rg.flow(i, j+H) > 0) {
+          a[i] = j;
+          break;
         }
-        a[*rit] = j;
-        // std::cout << "Assigning " << j << " for " << *rit << std::endl;
-        std::sort(rit+1, rows.end(), comp);
       }
     }
   }
@@ -74,20 +149,30 @@ struct BipartiteGraph
     Flags markedRows(H, false);
     Flags markedCols(W, false);
 
-    for(int i=0; i<H; ++i) {
-      // Mark rows having no assignment
-      if(a[i] == -1) {
-        markedRows[i] = true;
-        const auto& row = M.row(i);
-        // Mark all (unmarked) columns having zeros in newly marked row
-        for(int j=0; j<W; ++j) {
-          if(row[j] == 0) {
-            if(!markedCols[j]) {
-              markedCols[j] = true;
-              // Mark all rows having assignments in newly marked columns
-              for(int k=0; k<H; ++k) {
-                if(a[k] == j) {
-                  markedRows[k] = true;
+    Assignment aux = a;
+
+    bool done = false;
+    while(!done) {
+      done = true;
+      for(int i=0; i<H; ++i) {
+        // Mark rows having no assignment
+        if(aux[i] == -1) {
+          aux[i] = -2;
+          done = false;
+          // std::cout << "Marking row " << i << std::endl;
+          markedRows[i] = true;
+          const auto& row = M.row(i);
+          // Mark all (unmarked) columns having zeros in newly marked row
+          for(int j=0; j<W; ++j) {
+            if(row[j] == 0) {
+              if(!markedCols[j]) {
+                // std::cout << "Marking column " << j << std::endl;
+                markedCols[j] = true;
+                // Mark all rows having assignments in newly marked columns
+                for(int k=0; k<H; ++k) {
+                  if(aux[k] == j) {
+                    aux[k] = -1;
+                  }
                 }
               }
             }
@@ -166,6 +251,15 @@ struct BipartiteGraph
     return assignment;
   }
 
+  int cost(const Assignment& a) 
+  {
+    int result = 0;
+    for(int i=0; i<_M.height(); ++i) {
+      result += _M(i, a[i]);
+    }
+    return result;
+  }
+
   Matrix<int> _M;
 };
 
@@ -178,16 +272,12 @@ TEST(Hungarian, test1)
   g.set(1, {10, 1});
 
   auto a = g.perfectAssignment();
-
-  for(int i: a) {
-    std::cout << i << " ";
-  }
-  std::cout << std::endl;
+  EXPECT_THAT(a, testing::ElementsAre(0,1));
+  EXPECT_THAT(g.cost(a), testing::Eq(4));
 }
 
 TEST(Hungarian, test2) 
 {
-  // 19 22 22 79 31 2 77 47 8 28 9 57 54 81 18 8 2 61 78 98 51 47 63 55 7 93 27 59 49 24 56 27 4 22 70 68 93 75 68 35 68 13 27 80 29 87 9 72 36 87 60 76 5 98 5 37 50 29 52 73 18 17 77 95 87 68 9 9 29 94 93 28 25 65 62 50 73 77 22 92 1 71 94 71 71 36 36 20 66 88 95 76 23 39 84 73 96 28 19 50 54 81 31 67 50 2 34 65 22 77 16 51 100 24 30 17 27 45 54 60 14 43 29 6 50 66 80 43 43 93 23 52 13 54 7 87 95 18 70 100 40 77 40 30 53 16 60 68 19 48 88 37 73 86 69 10 13 74 26 84 88 9 14 18 51 38 44 52 27 34 39 40 95 6 66 35 97 29 49 16 57 3 17 96 37 29 37 81 94 42 73 33 75 34 31 65 44 25 20 19 68 21 48 19 83 96 57 37 78 72 41 63 19 40 50 44 81 4 61 22 8 55 98 88 29 52 51 87 4 78 35 75 49 73 50 44 69 14 66 33 33 37 11 95 80 88 82 46 97 62 14 13 67 33 97 47 
   BipartiteGraph g(16, 16);
   g.set(0,  {19,22,22,79,31, 2,77,47, 8,28, 9,57,54,81,18, 8});
   g.set(1,  { 2,61,78,98,51,47,63,55, 7,93,27,59,49,24,56,27});
@@ -208,11 +298,10 @@ TEST(Hungarian, test2)
 
 
   auto a = g.perfectAssignment();
+  BipartiteGraph::Assignment expected = {15,8,14,6,3,0,9,11,2,1,13,5,7,12,4,10};
 
-  for(int i: a) {
-    std::cout << i << " ";
-  }
-  std::cout << std::endl;
+  EXPECT_THAT(a, testing::ContainerEq(expected));
+  EXPECT_THAT(g.cost(a), testing::Eq(140));
 }
 
 TEST(Hungarian, test3) 
@@ -226,13 +315,8 @@ TEST(Hungarian, test3)
   g.set(2, {1, 6, 4});
 
   auto a = g.perfectAssignment();
-
-  for(int i: a) {
-    std::cout << i << " ";
-  }
-  std::cout << std::endl;
-
-
+  EXPECT_THAT(a, testing::ElementsAre(2,1,0));
+  EXPECT_THAT(g.cost(a), testing::Eq(3));
 }
 
 } // namspace hungarian
