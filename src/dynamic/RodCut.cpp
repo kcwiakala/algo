@@ -33,11 +33,11 @@ int maxPrice(const std::vector<int>& p, int n)
       }
     }
   }
-  printSolution(s, n);
+  // printSolution(s, n);
   return r[n];
 }
 
-TEST(RodCut, test1)
+TEST(Dynamic, RodCut_1)
 {
   std::vector<int> p = {1,5,8,9,10,17,17,20,24,30};
   EXPECT_THAT(maxPrice(p, 7), testing::Eq(18));

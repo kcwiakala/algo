@@ -41,7 +41,7 @@ void solution(std::ostream& strm, const array_2d_t<int>& s, size_t i, size_t j)
   }
 }
 
-TEST(MatrixMultiplication, basic)
+TEST(Dynamic, MatrixMultiplication_1)
 {
   matrix_chain_t chain = {{30,35}, {35, 15}, {15, 5}, {5, 10}, {10, 20}, {20, 25}};
 
@@ -70,22 +70,22 @@ TEST(MatrixMultiplication, basic)
     }
   }
 
-  std::cout << "Total cost: " << m[0][N-1] << std::endl;
+  // std::cout << "Total cost: " << m[0][N-1] << std::endl;
 
   // Print the cost matrix
-  for(size_t j=0; j<N; ++j)
-  {
-    for(size_t i=0; i<=j; ++i)
-    {
-      std::cout << m[i][j] << " ";
-    }
-    std::cout << std::endl;
-  }
+  // for(size_t j=0; j<N; ++j)
+  // {
+  //   for(size_t i=0; i<=j; ++i)
+  //   {
+  //     std::cout << m[i][j] << " ";
+  //   }
+  //   std::cout << std::endl;
+  // }
 
   // Print the solution
-  std::cout << "Solution: ";
-  solution(std::cout, s, 0, N-1);
-  std::cout << std::endl;
+  // std::cout << "Solution: ";
+  // solution(std::cout, s, 0, N-1);
+  // std::cout << std::endl;
 }
 
 } // namespace algo

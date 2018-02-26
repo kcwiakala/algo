@@ -42,14 +42,14 @@ int minTime(const Array& A, int K)
   return M[K][N-1];
 }
 
-TEST(PaintersPartition, test1) 
+TEST(Dynamic, PaintersPartition_1) 
 {
   const Array A = {10,10,10,10};
   const int K = 2;
   EXPECT_THAT(minTime(A,K), testing::Eq(20));
 }
 
-TEST(PaintersPartition, test2) 
+TEST(Dynamic, PaintersPartition_2) 
 {
   const Array A = {10,20,30,40};
   const int K = 2;

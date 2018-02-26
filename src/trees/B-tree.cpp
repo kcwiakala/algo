@@ -282,20 +282,20 @@ TEST(BTree, test1)
 
   EXPECT_TRUE(t.insert('b'));
 
-  t.print();
+  // t.print();
 
   EXPECT_FALSE(t.insert('i'));
 
   EXPECT_TRUE(t.remove('u'));
-  t.print();
+  // t.print();
   EXPECT_TRUE(t.remove('x'));
-  t.print();
+  // t.print();
   EXPECT_TRUE(t.remove('e'));
 
-  t.print();
+  // t.print();
   EXPECT_TRUE(t.remove('d'));
   // EXPECT_FALSE(t.remove('s'));
-  t.print();
+  // t.print();
 }
 
 } // namespace btree
