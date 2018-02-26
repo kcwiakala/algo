@@ -15,8 +15,8 @@ constexpr int INF = std::numeric_limits<int>::max();
 int minTime(const Array& A, int K) 
 {
   const int N = A.size();
-  int M[K+1][N] = {{0}};
-  Array B(N);
+  int M[K+1][N] = {{0}}; // Dynamic Programming Matrix
+  Array B(N); // sum B[i] = A[0] + ... + A[i]
   for(int i=0; i<N; ++i) {
     M[0][i] = INF;
     B[i] = A[i] + ((i > 0) ? B[i-1] : 0);
