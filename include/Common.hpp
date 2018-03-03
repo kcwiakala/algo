@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <functional>
 #include <list>
+#include <memory>
 #include <numeric>
 #include <queue>
 #include <vector>
