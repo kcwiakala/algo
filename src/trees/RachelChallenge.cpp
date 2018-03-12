@@ -2,6 +2,7 @@
 #include <bitset>
 #include <Common.hpp>
 #include <cstring>
+#include <random>
 
 namespace algo {
 namespace rachel {
@@ -11,52 +12,10 @@ constexpr size_t ALPHABET_SIZE = 'z' - 'a' + 1;
 constexpr size_t MAX_LENGTH = 100000;
 
 char text[MAX_LENGTH];
-unsigned char maxDistinct;
-
-struct Suffix
-{
-  Suffix(size_t b, size_t l): begin(b), length(l) 
-  {
-  }
-
-  size_t begin;
-  size_t length;
-  int distinctPos[ALPHABET_SIZE] = {-1}; 
-
-  void init()
-  {
-    int d=0;
-    Mask_t mask;
-    for(size_t i=0; i<length; ++i) {
-      const size_t x = 'z' - text[begin+i];
-      if(!mask.test(x)) {
-        mask.set(x);
-        distinctPos[d++] = i;
-      }
-      if(d == maxDistinct) {
-        break;
-      }
-    }
-    if(d < maxDistinct) {
-      distinctPos[d] = length;
-    }
-  }
-
-  int distinctAt(size_t len)
-  {
-    auto it = std::lower_bound(distinctPos, distinctPos+maxDistinct, len);
-    return std::distance(distinctPos, it);
-  }
-
-  bool operator<(const Suffix& rhs)
-  {
-    if(length < rhs.length) {
-      return std::strncmp(text+begin, text+rhs.begin, length) <= 0;
-    } else {
-      return std::strncmp(text+begin, text+rhs.begin, rhs.length) < 0;
-    }
-  }
-};
+size_t aux[MAX_LENGTH+1][ALPHABET_SIZE];
+size_t suffixes[MAX_LENGTH];
+size_t lcp[MAX_LENGTH];
+size_t count[MAX_LENGTH];
 
 class SuffixArray
 {
@@ -74,86 +33,101 @@ public:
 
   void init()
   {
-    suffixes.reserve(size);
-    size_t length = size;
-    Mask_t mask;
-    for(size_t begin=0; begin<size; ++begin, --length) {
-      suffixes.emplace_back(begin, length);
-      mask.set('z' - text[begin]);
+    for(size_t i=0; i<size; ++i) {
+      suffixes[i] = i;
     }
-    maxDistinct = mask.count();
-    std::sort(suffixes.begin(), suffixes.end());
-    for(Suffix& s: suffixes) {
-      s.init();
-    }
+    auto suffixComparer = [size=size](size_t s1, size_t s2) {
+      if(s1 < s2) { // 1. s1 longer than s2
+        return std::strncmp(text+s1, text+s2, size-s2) < 0;
+      } else { // 2. s1 shorter than s2
+        return std::strncmp(text+s1, text+s2, size-s1) <= 0;
+      }
+    };
+    std::sort(suffixes, suffixes+size, suffixComparer);
 
-    lcp.assign(size, 0);
+    for(size_t a=0; a<ALPHABET_SIZE; ++a) {
+      aux[0][a] = 0;
+    }
+    for(size_t i=1; i<=size; ++i) {
+      std::copy(aux[i-1], aux[i-1] + ALPHABET_SIZE, aux[i]);
+      aux[i]['z' - text[i-1]] += 1;
+    }
+    
+    lcp[0] = 0;
     for(size_t i=1; i<size; ++i) {
-      auto end = text + suffixes[i-1].begin + std::min(suffixes[i-1].length, suffixes[i].length);
-      auto m = std::mismatch(text + suffixes[i-1].begin, end, text+suffixes[i].begin);
-      lcp[i] = std::distance(text + suffixes[i-1].begin, m.first);
+      const size_t minLength = size - std::max(suffixes[i-1], suffixes[i]);
+      auto m = std::mismatch(text + suffixes[i-1], text + suffixes[i-1] + minLength, text+suffixes[i]);
+      lcp[i] = std::distance(text + suffixes[i-1], m.first);
     }
 
-    count.assign(size, 0);
-    count[0] = suffixes[0].length;
-    for(size_t i=1; i<suffixes.size(); ++i) {
-      count[i] = count[i-1] + suffixes[i].length - lcp[i];
+    count[0] = (size - suffixes[0]);
+    for(size_t i=1; i<size; ++i) {
+      count[i] = count[i-1] + (size - suffixes[i]) - lcp[i];
     }
+    total = count[size-1];
   }
 
   void print()
   {
     int counter = 0;
-    for(size_t i=0; i<suffixes.size(); ++i) {
-      const Suffix& sfx = suffixes[i];
-      for(size_t len = lcp[i]+1; len <= sfx.length; ++len) {
-        std::cout << ++counter << " : " << std::string(text+sfx.begin, len) << std::endl;
+    for(size_t i=0; i<size; ++i) {
+      const size_t length = size - suffixes[i];
+      for(size_t len = lcp[i]+1; len <= length; ++len) {
+        std::cout << ++counter << " : " << std::string(text+suffixes[i], len) << std::endl;
       }
     }
   }
 
-  void traverse(unsigned long from, unsigned long to) {
-
-  }
-
-  std::string at(size_t idx)
+  int distinct(size_t from, size_t to) 
   {
-    auto it = std::lower_bound(count.cbegin(), count.cend(), idx);
-    if(it == count.end()) {
-      return std::string();
-    } else {
-      size_t i = std::distance(count.cbegin(), it);
-      const Suffix& sfx = suffixes[i];
-      int diff = *it-idx;
-      std::string result(text + sfx.begin, sfx.length - diff);
-      return result;
+    int result = 0;
+    for(size_t a=0; a<ALPHABET_SIZE; ++a) {
+      if(aux[to][a] > aux[from][a]) {
+        ++result;
+      }
     }
+    return result;
   }
 
   int distinctAt(size_t idx)
   {
-    auto it = std::lower_bound(count.cbegin(), count.cend(), idx);
-    if(it == count.end()) {
+    if(idx > total) {
       return -1;
-    } else {
-      size_t i = std::distance(count.cbegin(), it);
-      Suffix& sfx = suffixes[i];
-      return sfx.distinctAt(sfx.length - (*it-idx));
     }
+    auto it = std::lower_bound(count, count + size, idx);
+    const size_t i = std::distance(count, it);
+    const size_t diff = *it - idx;
+    const size_t from = suffixes[i];
+    const size_t to = size - diff;
+    return distinct(from, to);
   }
 
   const size_t size;
-  std::vector<Suffix> suffixes;
-  std::vector<size_t> lcp;
-  std::vector<size_t> count;
+  size_t total;
 };
-
 
 TEST(RachelChallenge, test1) 
 {
-  const std::string s("banana");
-  SuffixArray sa(s);
-  //sa.print();
+  std::random_device randomDevice;
+  std::default_random_engine randomEngine(randomDevice());
+  std::uniform_int_distribution<char> gen('a', 'z');
+
+  std::string longOne(100000, '\0');
+  for(char& c: longOne) {
+    c = gen(randomEngine); 
+  }
+
+  const std::string shortOne("banana");
+  SuffixArray sa(longOne);
+  // sa.print();
+  std::cout << sa.total << std::endl;
+
+  size_t queries = std::min(static_cast<size_t>(100000), sa.total);
+
+  for(size_t i=1; i<=queries; ++i) {
+    EXPECT_GT(sa.distinctAt(i), 0);
+    // std::cout << sa.distinctAt(i) << std::endl;
+  }
   //std::cout << sa.distinctAt(6) << std::endl;
   //std::cout << sa.distinctAt(11) << std::endl;
 
@@ -163,9 +137,9 @@ TEST(RachelChallenge, test1)
   // }
 
   // std::cout << "KUPA" << std::endl;
-  for(size_t i=0; i<sa.count.back(); ++i) {
-    std::cout << sa.distinctAt(i+1) << std::endl;
-  }
+  // for(size_t i=0; i<sa.count.back(); ++i) {
+  //   std::cout << sa.distinctAt(i+1) << std::endl;
+  // }
 }
 
 } // namespace rachel
