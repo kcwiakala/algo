@@ -5,7 +5,7 @@
 namespace algo {
 namespace ukkonen {
 
-std::ofstream f("output.txt");
+// std::ofstream f("output.txt");
 
 struct Result
 {
@@ -62,7 +62,7 @@ public:
     size_t pos = start + 1;
     while(pos < end && text[pos] != 0) {
       ++counter;
-      f << counter << ": " << prefix << std::string(text+start, text+pos) << std::endl;
+      // f << counter << ": " << prefix << std::string(text+start, text+pos) << std::endl;
       ++pos;
     }
     prefix.append(text+start, text+pos); 

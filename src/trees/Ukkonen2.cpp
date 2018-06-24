@@ -5,7 +5,7 @@
 namespace algo {
 namespace ukkonen2 {
 
-std::ofstream f("output.txt");
+// std::ofstream f("output.txt");
 
 struct Result
 {
@@ -177,9 +177,9 @@ TEST(Ukkonen2, test1)
   }
   std::cout << counter << std::endl;
   std::cout << result.size() << std::endl;
-  for(auto r: result) {
-    f << r.startIdx << " / " << static_cast<int>(r.length) << std::endl;
-  }
+  // for(auto r: result) {
+  //   f << r.startIdx << " / " << static_cast<int>(r.length) << std::endl;
+  // }
   std::cout << answer(result, 6820) << std::endl;
 }
 
