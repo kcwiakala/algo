@@ -72,6 +72,33 @@ struct Graph: GenericGraph<WeightedEdge>
     }
     return distance;
   }
+
+  VerticeList dijkstra2(int source)
+  {
+    Flags discovered(size, false);
+    VerticeList distance(size, std::numeric_limits<int>::max());
+    distance[source] = 0;
+
+    auto comparer = [&distance](int u, int v) {
+      return distance[u] > distance[v];
+    };
+    std::priority_queue<int, std::vector<int>, decltype(comparer)> pq(comparer);
+
+    pq.push(source);
+    while(!pq.empty()) {
+      int u = pq.top();
+      pq.pop();
+      discovered[u] = true;
+      for(const auto& edge: adjacency[u]) {
+        if(!discovered[edge.to]) {
+          distance[edge.to] = std::min(distance[u] + edge.weight, distance[edge.to]);
+          pq.push(edge.to);
+        }
+      }
+    }
+    return distance;
+  }
+
 };
 
 TEST(Dijkstra, test1) 
@@ -85,7 +112,7 @@ TEST(Dijkstra, test1)
   g.connect(5,2,3);
   g.connect(5,4,1);
 
-  auto distance = g.dijkstra(0);
+  auto distance = g.dijkstra2(0);
   ASSERT_EQ(distance.size(), 6);
   EXPECT_EQ(distance[0], 0);
   EXPECT_EQ(distance[1], 3);

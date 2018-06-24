@@ -56,5 +56,52 @@ TEST(Dynamic, PaintersPartition_2)
   EXPECT_THAT(minTime(A,K), testing::Eq(60));
 }
 
+
+int partition(const Array& a, const size_t K)
+{
+  const size_t N = a.size();
+  int DP[N][K];
+  int PT[N][K];
+  DP[0][0] = a[0];
+  PT[0][0] = -1;
+  for(size_t i=1; i<N; ++i) {
+    DP[i][0] = DP[i-1][0] + a[i];
+    PT[i][0] = -1;
+  }
+
+  for(size_t k=1;k<K;++k) {
+    for(size_t i=1; i<N; ++i) {
+      DP[i][k] = std::numeric_limits<int>::max();
+      for(size_t j=1; j<=i; ++j) {
+        int aux = std::max(DP[j-1][k-1], DP[i][0] - DP[j-1][0]);
+        if(aux < DP[i][k]) {
+          DP[i][k] = aux;
+          PT[i][k] = j;
+        }
+      }
+    }
+  }
+  std::vector<int> result;
+  int k = K-1;
+  int e = N-1;
+  while(k>0) {
+    int b = PT[e][k--];
+    result.push_back(b);
+    e = b-1; 
+  }
+  std::reverse(result.begin(), result.end());
+  // for(int r: result) {
+  //   std::cout << r << " ";
+  // }
+  // std::cout << std::endl;
+  return DP[N-1][K-1];
+}
+
+TEST(Dynamic, BookPartiton)
+{
+  const Array A = {100, 200, 300, 400, 500, 600, 700, 800, 900};
+  EXPECT_EQ(partition(A,3), 1700);
+}
+
 } // namespace painters_partition
 } // namespace algo
